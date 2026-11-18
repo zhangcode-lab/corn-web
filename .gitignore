@@ -38,5 +38,12 @@ __screenshots__/
 # Vite
 *.timestamp-*-*.mjs
 
+#python
 _pycache__/
 *.pyc
+venv/
+.venv/
+
+#模型权重
+*.pt
+
