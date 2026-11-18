@@ -20,6 +20,7 @@ const loading = ref(false)
 // boxes：检测框列表。一开始是空数组 = 一个框都不画
 const boxes = ref([])
 const fileobj = ref(null)
+const confValue = ref(0.25)  // 置信度阈值，默认 0.25
 // ---------- 第 2 块：假数据 ----------
 // 真实情况：这些数据由第 2 周的 Python 后端算出来返回
 // 现在先写死，目的是先验证「前端能不能把框画出来」
@@ -55,7 +56,7 @@ console.log('按钮被点了，当前状态：',loading.value,'框的数量：',
           // 把图片打包成 FormData
   form.append('file', fileobj.value)// 这里的 'file' 是后端接收的字段名，fileobj.value 是用户选的文件对象
 try{
-  const res =await axios.post('http://127.0.0.1:8000/api/detect',form)// 发送 POST 请求到后端，传图片过去
+  const res =await axios.post('http://127.0.0.1:8000/api/detect?conf='+confValue.value,form)// 发送 POST 请求到后端，传图片过去
   console.log('后端返回了：',res.status);
   const data = res.data
   boxes.value = data.detections.map((d) => ({
@@ -118,6 +119,10 @@ const hasResult = computed(() => boxes.value.length > 0)
         <button class="btn" :disabled="!photoUrl || loading" @click="startDetect">
           {{ loading ? '检测中...' : '开始检测' }}
         </button>
+        <div style="margin-top: 12px">
+          <label>置信度阈值：{{ confValue.toFixed(2) }}</label>
+          <input type="range" min="0.05" max="0.95" step="0.05" v-model.number="confValue" style="width: 100%" />
+        </div>
       </div>
 
       <!-- ===== 右栏：结果列表 ===== -->

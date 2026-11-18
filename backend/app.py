@@ -17,9 +17,9 @@ CONF = 0.25
 # ============================================================
 # 核心逻辑
 # ============================================================
-def detect_image(image: Image.Image):
+def detect_image(image: Image.Image, conf: float = 0.25):
     """吃一张 PIL 图片，吐出 (检测结果列表, 宽, 高)"""
-    results = model(image, conf=CONF, verbose=False)
+    results = model(image, conf=conf, verbose=False)
     boxes = results[0].boxes
     h_img, w_img = results[0].orig_shape
     out = []
@@ -45,7 +45,7 @@ def detect_image(image: Image.Image):
 def read_root():
     return {"message": "服务在跑，去 /docs 试试"}
 @app.post("/api/detect")
-async def api_detect(file: UploadFile = File(...)):
+async def api_detect(file: UploadFile = File(...), conf:float = 0.25):
     # 1. 把上传的文件读进内存
     data = await file.read()
     # 2. 转成图片。如果传的不是图片，要给它一个友好的错误
@@ -54,7 +54,7 @@ async def api_detect(file: UploadFile = File(...)):
     except Exception:
         raise HTTPException(status_code=400, detail="这不是一张能识别的图片")
     # 3. 推理
-    detections, w_img, h_img = detect_image(image)
+    detections, w_img, h_img = detect_image(image, conf)
     # 4. 按前端约定的格式返回
     return {
         "filename": file.filename,
