@@ -7,6 +7,7 @@
 // ==========================================================
 
 import { ref, computed } from 'vue'
+import axios from 'axios'   
 console.log('======= 页面打开了 =======');
 // ---------- 第 1 块：状态（就是几个"盒子"）----------
 
@@ -18,13 +19,13 @@ const fileName = ref('')
 const loading = ref(false)
 // boxes：检测框列表。一开始是空数组 = 一个框都不画
 const boxes = ref([])
-
+const fileobj = ref(null)
 // ---------- 第 2 块：假数据 ----------
 // 真实情况：这些数据由第 2 周的 Python 后端算出来返回
 // 现在先写死，目的是先验证「前端能不能把框画出来」
 // x / y / w / h 都是百分比，相对于图片自己算
 const FAKE_RESULT = [
-  { name: '叶锈病', confidence: 0.95, x: 22, y: 28, w: 26, h: 22 },
+  { name: '叶锈病', confidence: 0.95, x: 78, y: 28, w: 26, h: 22 },
   { name: '叶斑病', confidence: 0.78, x: 58, y: 55, w: 18, h: 16 }
 ]
 
@@ -40,28 +41,37 @@ function onFileChange(event) {
   photoUrl.value = URL.createObjectURL(file)
   console.log('图片地址是：',photoUrl.value);// 换图了，把上次的框清掉
   boxes.value = []
+  fileobj.value = file
 }
 
 // 用户点了"开始检测"就进这里
 
-function startDetect() {
-  if (!photoUrl.value) return
+async function startDetect() {
+  if (!photoUrl.value || !fileobj.value) return
 console.log('按钮被点了，当前状态：',loading.value,'框的数量：',boxes.value.length);
   loading.value = true
   boxes.value = []
+  const form = new FormData()  
+          // 把图片打包成 FormData
+  form.append('file', fileobj.value)// 这里的 'file' 是后端接收的字段名，fileobj.value 是用户选的文件对象
+try{
+  const res =await axios.post('http://127.0.0.1:8000/api/detect',form)// 发送 POST 请求到后端，传图片过去
+  console.log('后端返回了：',res.data);// 假装在请求后端：等 1 秒，然后把假结果塞给 boxes
 
-  // 假装在请求后端：等 1 秒，然后把假结果塞给 boxes
-  // 第 2 周这里会换成 axios.post('/api/detect', ...)
-  
-  setTimeout(() => {
-    console.log('1秒到了');
-   
-    
-    boxes.value = FAKE_RESULT
-    loading.value = false
-     console.log('塞完了',boxes.value.length);
-  }, 1000)
-  console.log('startDetect 结束');
+  const data = res.data
+  boxes.value = data.detections.map((d) => ({
+    name: d.name,
+    confidence: d.confidence,
+    x: (d.x/data.image_width)*100,
+    y: (d.y/data.image_height)*100,
+    w: (d.w/data.image_width)*100,
+    h: (d.h/data.image_height)*100,
+  }))
+}catch(e){
+  alert('请求失败：'+e.message)
+}finally{
+  loading.value = false
+}
 }
 
 // ---------- 第 4 块：派生数据（算出来的，不是手动改的）----------
@@ -82,7 +92,7 @@ const hasResult = computed(() => boxes.value.length > 0)
 
 <template>
   <div class="page">
-    <h1>我的第一个项目</h1>
+    <h1>病害检测系统</h1>
 
     <div class="main">
       <!-- ===== 左栏：图片 + 检测 ===== -->
