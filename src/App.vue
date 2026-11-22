@@ -56,7 +56,7 @@ console.log('按钮被点了，当前状态：',loading.value,'框的数量：',
           // 把图片打包成 FormData
   form.append('file', fileobj.value)// 这里的 'file' 是后端接收的字段名，fileobj.value 是用户选的文件对象
 try{
-  const res =await axios.post('http://127.0.0.1:8000/api/detect?conf='+confValue.value,form)// 发送 POST 请求到后端，传图片过去
+  const res =await axios.post('/api/detect?conf='+confValue.value,form)// 发送 POST 请求到后端，传图片过去
   console.log('后端返回了：',res.status);
   const data = res.data
   boxes.value = data.detections.map((d) => ({
