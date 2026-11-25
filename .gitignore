@@ -47,3 +47,5 @@ venv/
 #模型权重
 *.pt
 
+dist/
+*.zip"dist.zip" 
